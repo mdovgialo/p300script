@@ -2,6 +2,15 @@ from obci.interfaces.bci.p300_MD.helper_functions import get_epochs_fromfile, ev
 import sys
 import os.path
 import os
+import numpy as np
+import json
+#settings:
+baseline = -0.1
+filtr = [[1, 30], [0.1, 33], 3, 12]
+montage = ['custom', 'M1', 'M2']
+montage = ['custom', u'Cz']
+
+
 target = sys.argv[1]
 #name of target tag name
 work_type = sys.argv[2]
@@ -27,9 +36,10 @@ elif work_type == 'visualsek':
             return True
         return False
         
-def prepare_for_tester(tg, ntg, dir):
-    targets = np.array([i.get_samples() for i in tg])
-    nontargets = np.array([i.get_samples() for i in ntg])
+def prepare_for_tester(tg, ntg, dir, name, baseline):
+    eq = min(k.shape[2] for k in [i.get_samples()[None,:,:] for i in tg]+[i.get_samples()[None,:,:] for i in ntg])-1
+    targets = np.concatenate([i.get_samples()[None,:,:eq] for i in tg], axis = 0)
+    nontargets = np.concatenate([i.get_samples()[None,:,:eq] for i in ntg], axis = 0)
     targets_mean = targets.mean(axis=2)[:,:,None]
     nontargets_mean = nontargets.mean(axis=2)[:,:,None]
     
@@ -40,10 +50,10 @@ def prepare_for_tester(tg, ntg, dir):
     meta['baseline'] = baseline
     meta['channel_gains'] =  tg[0].get_param('channels_gains')
     
-    with open(os.path.join(dir, 'meta.json'), 'w') as datafile:
+    with open(os.path.join(dir, name+'_meta.json'), 'w') as datafile:
         json.dump(meta, datafile)
-    np.save(os.path.join(dir, 'targets.npy'), targets-targets_mean)
-    np.save(os.path.join(dir, 'nontargets.npy'), nontargets[1:-2]-nontargets_mean[1:-2],)
+    np.save(os.path.join(dir, name+'_targets.npy'), targets-targets_mean)
+    np.save(os.path.join(dir, name+'_nontargets.npy'), nontargets-nontargets_mean,)
 
 for path in files:
     dirname, filename = os.path.split(path)
@@ -52,10 +62,8 @@ for path in files:
     outputpath = os.path.join(dirname, 'output')
     if not os.path.exists(outputpath):
         os.makedirs(outputpath)
-    filtr = [[1, 30], [0.1, 33], 3, 12]
-    montage = ['custom', 'M1', 'M2']
-    montage = ['custom', u'Cz']
-    target_tags, nontarget_tags = get_epochs_fromfile(ds, start_offset=-0.1,duration=1.0, 
+    
+    target_tags, nontarget_tags = get_epochs_fromfile(ds, start_offset=baseline,duration=1.0, 
                         filter=filtr, montage=montage,
                         drop_chnls = [ u'AmpSaw', u'DriverSaw', u'trig1', u'trig2'],
                         target_tags_func = target_tags_func,
@@ -75,5 +83,5 @@ for path in files:
         fig.set_size_inches(18.5, 30.5, forward=True)
         fig.tight_layout()
         fig.savefig(os.path.join(outputpath, datasetname+'_{:02d}_{}_rs.png'.format(i, montage)), dpi=150)
-    prepare_for_tester(target_tags, nontarget_tags, outputpath)
+    prepare_for_tester(target_tags, nontarget_tags, outputpath, datasetname, baseline)
 
