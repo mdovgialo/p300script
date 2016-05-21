@@ -75,5 +75,5 @@ for path in files:
         fig.set_size_inches(18.5, 30.5, forward=True)
         fig.tight_layout()
         fig.savefig(os.path.join(outputpath, datasetname+'_{:02d}_{}_rs.png'.format(i, montage)), dpi=150)
-    
+    prepare_for_tester(target_tags, nontarget_tags, outputpath)
 
