@@ -7,8 +7,9 @@ import json
 #settings:
 baseline = -0.1
 filtr = [[1, 30], [0.1, 33], 3, 12]
-montage = ['custom', 'M1', 'M2']
-montage = ['custom', u'Cz']
+#~ montage = ['custom', 'M1', 'M2']
+montage = ['custom', 'Cz']
+#~ montage = ['csa']
 
 
 target = sys.argv[1]
@@ -36,7 +37,7 @@ elif work_type == 'visualsek':
             return True
         return False
         
-def prepare_for_tester(tg, ntg, dir, name, baseline):
+def prepare_for_tester(tg, ntg, dir, name, baseline, montage):
     eq = min(k.shape[2] for k in [i.get_samples()[None,:,:] for i in tg]+[i.get_samples()[None,:,:] for i in ntg])-1
     targets = np.concatenate([i.get_samples()[None,:,:eq] for i in tg], axis = 0)
     nontargets = np.concatenate([i.get_samples()[None,:,:eq] for i in ntg], axis = 0)
@@ -50,10 +51,10 @@ def prepare_for_tester(tg, ntg, dir, name, baseline):
     meta['baseline'] = baseline
     meta['channel_gains'] =  tg[0].get_param('channels_gains')
     
-    with open(os.path.join(dir, name+'_meta.json'), 'w') as datafile:
+    with open(os.path.join(dir, name+'_m_{}_meta.json'.format(montage)), 'w') as datafile:
         json.dump(meta, datafile)
-    np.save(os.path.join(dir, name+'_targets.npy'), targets-targets_mean)
-    np.save(os.path.join(dir, name+'_nontargets.npy'), nontargets-nontargets_mean,)
+    np.save(os.path.join(dir, name+'_m_{}_targets.npy'.format(montage)), targets-targets_mean)
+    np.save(os.path.join(dir, name+'_m_{}_nontargets.npy'.format(montage)), nontargets-nontargets_mean,)
 
 for path in files:
     dirname, filename = os.path.split(path)
@@ -83,5 +84,5 @@ for path in files:
         fig.set_size_inches(18.5, 30.5, forward=True)
         fig.tight_layout()
         fig.savefig(os.path.join(outputpath, datasetname+'_{:02d}_{}_rs.png'.format(i, montage)), dpi=150)
-    prepare_for_tester(target_tags, nontarget_tags, outputpath, datasetname, baseline)
+    prepare_for_tester(target_tags, nontarget_tags, outputpath, datasetname, baseline, montage)
 
