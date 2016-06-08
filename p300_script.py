@@ -8,6 +8,7 @@ import json
 baseline = -0.1
 filtr = [[1, 30], [0.1, 33], 3, 12]
 #~ montage = ['custom', 'M1', 'M2']
+#~ montage = ['custom', 'A1', 'A2']
 montage = ['custom', 'Cz']
 #~ montage = ['csa']
 
@@ -36,6 +37,16 @@ elif work_type == 'visualsek':
         if tag['description']['name'] != target:
             return True
         return False
+        
+elif work_type == 'target':
+    def target_tags_func(tag):
+        if tag['desc']['index'] == target:
+            return True
+    def nontarget_tags_func(tag):
+        if tag['desc']['index'] != target:
+            return True
+        return False
+    
         
 def prepare_for_tester(tg, ntg, dir, name, baseline, montage):
     eq = min(k.shape[2] for k in [i.get_samples()[None,:,:] for i in tg]+[i.get_samples()[None,:,:] for i in ntg])-1
